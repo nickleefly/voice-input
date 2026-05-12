@@ -9,7 +9,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func checkAccessibility() {
-        let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue(): true] as CFDictionary
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): false] as CFDictionary
         let trusted = AXIsProcessTrustedWithOptions(options)
         if !trusted {
             let alert = NSAlert()

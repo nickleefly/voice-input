@@ -7,7 +7,10 @@ final class FnKeyMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var fnPressed = false
+    private var fnUpWorkItem: DispatchWorkItem?
     private var eventCount = 0
+
+    private static let fnUpDebounce: TimeInterval = 0.15
 
     private static let logURL = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".voiceinput-debug.log")
@@ -110,14 +113,22 @@ final class FnKeyMonitor {
         let fnDown = event.flags.contains(.maskSecondaryFn)
 
         if fnDown && !fnPressed {
+            fnUpWorkItem?.cancel()
+            fnUpWorkItem = nil
             Self.writeLog("Fn DOWN via flagsChanged (maskSecondaryFn)")
             fnPressed = true
             DispatchQueue.main.async { [weak self] in self?.onFnKeyDown?() }
             return nil
         } else if !fnDown && fnPressed {
-            Self.writeLog("Fn UP via flagsChanged")
+            Self.writeLog("Fn UP via flagsChanged (debouncing)")
             fnPressed = false
-            DispatchQueue.main.async { [weak self] in self?.onFnKeyUp?() }
+            let item = DispatchWorkItem { [weak self] in
+                guard let self = self, !self.fnPressed else { return }
+                Self.writeLog("Fn UP confirmed after debounce")
+                self.onFnKeyUp?()
+            }
+            fnUpWorkItem = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.fnUpDebounce, execute: item)
             return nil
         }
 
@@ -131,14 +142,22 @@ final class FnKeyMonitor {
         }
 
         if type == .keyDown && !fnPressed {
+            fnUpWorkItem?.cancel()
+            fnUpWorkItem = nil
             Self.writeLog("Fn DOWN via keyDown (keyCode=63)")
             fnPressed = true
             DispatchQueue.main.async { [weak self] in self?.onFnKeyDown?() }
             return nil
         } else if type == .keyUp && fnPressed {
-            Self.writeLog("Fn UP via keyUp (keyCode=63)")
+            Self.writeLog("Fn UP via keyUp (keyCode=63, debouncing)")
             fnPressed = false
-            DispatchQueue.main.async { [weak self] in self?.onFnKeyUp?() }
+            let item = DispatchWorkItem { [weak self] in
+                guard let self = self, !self.fnPressed else { return }
+                Self.writeLog("Fn UP confirmed after debounce (keyUp)")
+                self.onFnKeyUp?()
+            }
+            fnUpWorkItem = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.fnUpDebounce, execute: item)
             return nil
         }
 
