@@ -32,6 +32,11 @@ class SettingsWindowController {
         apiBaseURLField.placeholderString = "https://api.openai.com/v1"
         apiBaseURLField.stringValue = refiner.apiBaseURL
         apiBaseURLField.font = NSFont.systemFont(ofSize: 13)
+        apiBaseURLField.isEditable = true
+        apiBaseURLField.isSelectable = true
+        apiBaseURLField.isBezeled = true
+        apiBaseURLField.bezelStyle = .roundedBezel
+        apiBaseURLField.focusRingType = .default
 
         // API Key
         let keyLabel = NSTextField(labelWithString: "API Key:")
@@ -40,6 +45,11 @@ class SettingsWindowController {
         apiKeyField.placeholderString = "sk-..."
         apiKeyField.stringValue = refiner.apiKey
         apiKeyField.font = NSFont.systemFont(ofSize: 13)
+        apiKeyField.isEditable = true
+        apiKeyField.isSelectable = true
+        apiKeyField.isBezeled = true
+        apiKeyField.bezelStyle = .roundedBezel
+        apiKeyField.focusRingType = .default
 
         // Model
         let modelLabel = NSTextField(labelWithString: "Model:")
@@ -48,6 +58,11 @@ class SettingsWindowController {
         modelField.placeholderString = "gpt-4o-mini"
         modelField.stringValue = refiner.model
         modelField.font = NSFont.systemFont(ofSize: 13)
+        modelField.isEditable = true
+        modelField.isSelectable = true
+        modelField.isBezeled = true
+        modelField.bezelStyle = .roundedBezel
+        modelField.focusRingType = .default
 
         // Status label
         statusLabel = NSTextField(labelWithString: "")
@@ -103,6 +118,7 @@ class SettingsWindowController {
         ])
 
         self.window = w
+        w.initialFirstResponder = apiBaseURLField
         NSApp.activate(ignoringOtherApps: true)
         w.center()
         w.makeKeyAndOrderFront(nil)
