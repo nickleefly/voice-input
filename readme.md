@@ -3,9 +3,32 @@
 A macOS menu-bar voice input app. Hold Fn to record, release to
 inject transcribed text into the focused input field.
 
-## Build
+## Install (recommended)
 
-Requires macOS 14+ and Swift 5.9+.
+Requires macOS 14+. Open Terminal (⌘+Space → "Terminal") and paste:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nickleefly/voice-input/main/install.sh | bash
+```
+
+Then:
+
+1. When System Settings opens, toggle **VoiceInput** ON under
+   **Privacy & Security → Accessibility**.
+2. Quit VoiceInput from the menu bar (icon → Quit).
+3. Relaunch from `/Applications/VoiceInput.app`.
+4. Hold the **Fn** key to record, release to inject.
+
+The installer downloads the latest release, strips the macOS
+quarantine attribute, re-signs the app locally so Accessibility
+permissions stick, and clears any stale TCC grants.
+
+If the Fn key still doesn't trigger after granting permission,
+check `~/.voiceinput-debug.log`.
+
+## Build from source
+
+Requires Swift 5.9+.
 
 ```bash
 make build          # Build .app bundle
@@ -16,6 +39,16 @@ make clean          # Clean build artifacts
 
 After install, grant Accessibility permission in
 System Settings → Privacy & Security → Accessibility.
+
+## Cutting a release
+
+Tagging a `v*` tag triggers `.github/workflows/release.yml`, which
+builds the `.app` and uploads `VoiceInput.zip` to a GitHub Release.
+The `install.sh` script always pulls from the latest release.
+
+```bash
+git tag v1.0.0 && git push --tags
+```
 
 ## Prompt
 
