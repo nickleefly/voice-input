@@ -35,7 +35,7 @@ fi
 echo "→ Quitting any running instance…"
 pkill -f "$APP/Contents/MacOS/VoiceInput" 2>/dev/null || true
 
-echo "→ Installing to $DEST…"
+echo "→ Installing to ${DEST}…"
 [ -d "$DEST" ] && rm -rf "$DEST"
 mv "$TMP/$APP" "$DEST"
 
