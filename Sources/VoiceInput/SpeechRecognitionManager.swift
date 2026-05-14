@@ -63,18 +63,6 @@ class SpeechRecognitionManager {
         self.recognitionRequest = request
 
         recognitionTask = speechRecognizer.recognitionTask(with: request) { [weak self] result, error in
-            if let error = error {
-                DispatchQueue.main.async {
-                    // Cancel error is expected when we stop
-                    let nsError = error as NSError
-                    if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 216 {
-                        // Cancellation - ignore
-                        return
-                    }
-                    self?.onError?(error)
-                }
-                return
-            }
             if let result = result {
                 let text = result.bestTranscription.formattedString
                 if result.isFinal {
@@ -82,6 +70,17 @@ class SpeechRecognitionManager {
                 } else {
                     DispatchQueue.main.async { self?.onPartialResult?(text) }
                 }
+            }
+            if let error = error {
+                DispatchQueue.main.async {
+                    let nsError = error as NSError
+                    if nsError.domain == "kAFAssistantErrorDomain" {
+                        return
+                    }
+                    self?.stop()
+                    self?.onError?(error)
+                }
+                return
             }
         }
 
@@ -99,20 +98,30 @@ class SpeechRecognitionManager {
             DispatchQueue.main.async { self?.onAudioLevel?(rms) }
         }
 
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
         audioEngine.prepare()
         do {
             try audioEngine.start()
         } catch {
+            cleanupAudio()
             onError?(error)
         }
     }
 
     func stop() {
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
+        cleanupAudio()
         recognitionRequest?.endAudio()
         recognitionRequest = nil
-        recognitionTask?.cancel()
+        recognitionTask?.finish()
         recognitionTask = nil
+    }
+
+    private func cleanupAudio() {
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
+        audioEngine.inputNode.removeTap(onBus: 0)
     }
 }

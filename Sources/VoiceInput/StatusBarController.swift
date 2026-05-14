@@ -40,6 +40,7 @@ class StatusBarController: NSObject {
     private var currentText = ""
     private var isRecording = false
     private var isRefining = false
+    private var hasHandledResult = false
 
     private var selectedLanguage: RecognitionLanguage {
         get {
@@ -148,7 +149,7 @@ class StatusBarController: NSObject {
 
     private func setupSpeechManager() {
         speechManager.onPartialResult = { [weak self] text in
-            guard let self = self, self.isRecording else { return }
+            guard let self = self else { return }
             self.currentText = text
             self.floatingWindow.updateText(text)
         }
@@ -167,11 +168,13 @@ class StatusBarController: NSObject {
         speechManager.onError = { [weak self] error in
             guard let self = self else { return }
             print("Speech error: \(error)")
+            self.isRecording = false
+            self.hasHandledResult = true
+            self.setRecordingUI(false)
             self.floatingWindow.updateText("Error: \(error.localizedDescription)")
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
                 self?.floatingWindow.hide()
             }
-            self.stopRecording()
         }
     }
 
@@ -207,6 +210,7 @@ class StatusBarController: NSObject {
         guard !isRecording && !isRefining else { return }
         isRecording = true
         currentText = ""
+        hasHandledResult = false
         setRecordingUI(true)
         floatingWindow.show(text: "")
         speechManager.setLocale(selectedLanguage.locale)
@@ -219,17 +223,20 @@ class StatusBarController: NSObject {
         setRecordingUI(false)
         speechManager.stop()
 
-        // If no final result yet, wait briefly
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        // Wait for final result delivery; if nothing came through, use partial text or hide
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self, !self.isRefining else { return }
-            if self.currentText.isEmpty {
+            if !self.currentText.isEmpty {
+                self.handleRecordingFinished()
+            } else {
                 self.floatingWindow.hide()
             }
         }
     }
 
     private func handleRecordingFinished() {
-        guard !isRefining else { return }
+        guard !isRefining, !hasHandledResult else { return }
+        hasHandledResult = true
 
         if currentText.isEmpty {
             floatingWindow.hide()

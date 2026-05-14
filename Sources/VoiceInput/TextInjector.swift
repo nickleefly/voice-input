@@ -2,13 +2,17 @@ import AppKit
 import Carbon
 
 final class TextInjector {
+    private var isInjecting = false
+
     func inject(_ text: String) {
         guard !text.isEmpty else { return }
 
         let pasteboard = NSPasteboard.general
 
-        // Save current clipboard content
-        let savedText = pasteboard.string(forType: .string)
+        // Save current clipboard only if we're not already mid-injection, to avoid
+        // capturing our own previous transcription as the "saved" content.
+        let savedText: String? = isInjecting ? nil : pasteboard.string(forType: .string)
+        isInjecting = true
 
         // Write transcription to clipboard
         pasteboard.clearContents()
@@ -46,11 +50,12 @@ final class TextInjector {
         }
 
         // Restore original clipboard content
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            pasteboard.clearContents()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             if let saved = savedText {
+                pasteboard.clearContents()
                 pasteboard.setString(saved, forType: .string)
             }
+            self?.isInjecting = false
         }
     }
 
