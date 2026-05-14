@@ -14,7 +14,11 @@ class SpeechRecognitionManager {
 
     init(locale: Locale = Locale(identifier: "zh-CN")) {
         self.currentLocale = locale
-        SFSpeechRecognizer.requestAuthorization { _ in }
+        // Only request authorization if not already determined
+        let status = SFSpeechRecognizer.authorizationStatus()
+        if status == .notDetermined {
+            SFSpeechRecognizer.requestAuthorization { _ in }
+        }
     }
 
     func setLocale(_ locale: Locale) {
@@ -36,8 +40,15 @@ class SpeechRecognitionManager {
         recognitionTask?.cancel()
         recognitionTask = nil
 
-        guard let speechRecognizer = SFSpeechRecognizer(locale: currentLocale) else {
-            onError?(NSError(domain: "VoiceInput", code: 2, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer not available for locale"]))
+        guard let speechRecognizer = SFSpeechRecognizer(locale: currentLocale), speechRecognizer.isAvailable else {
+            onError?(NSError(domain: "VoiceInput", code: 2, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer not available for \(currentLocale.identifier). Download the language in System Settings → Keyboard → Dictation."]))
+            return
+        }
+
+        let requestedLang = currentLocale.identifier.replacingOccurrences(of: "-", with: "_")
+        let actualLang = speechRecognizer.locale.identifier.replacingOccurrences(of: "-", with: "_")
+        if actualLang != requestedLang {
+            onError?(NSError(domain: "VoiceInput", code: 3, userInfo: [NSLocalizedDescriptionKey: "\(currentLocale.identifier) not installed. Download it in System Settings → Keyboard → Dictation."]))
             return
         }
 
@@ -100,5 +111,8 @@ class SpeechRecognitionManager {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
         recognitionRequest?.endAudio()
+        recognitionRequest = nil
+        recognitionTask?.cancel()
+        recognitionTask = nil
     }
 }

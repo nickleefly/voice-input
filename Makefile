@@ -11,7 +11,7 @@ build:
 	mkdir -p $(APP_BUNDLE)/Contents/Resources
 	cp $(BUILD_DIR)/$(APP_NAME) $(APP_BUNDLE)/Contents/MacOS/
 	cp Resources/Info.plist $(APP_BUNDLE)/Contents/
-	codesign --force --sign - $(APP_BUNDLE)
+	codesign --force --deep --sign - --identifier com.voiceinput.app --entitlements Resources/VoiceInput.entitlements $(APP_BUNDLE)
 
 run: build
 	open $(APP_BUNDLE)

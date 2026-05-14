@@ -7,6 +7,10 @@ enum RecognitionLanguage: String, CaseIterable {
     case traditionalChinese = "zh-TW"
     case japanese = "ja-JP"
     case korean = "ko-KR"
+    case spanish = "es-ES"
+    case french = "fr-FR"
+    case german = "de-DE"
+    case russian = "ru-RU"
 
     var displayName: String {
         switch self {
@@ -15,6 +19,10 @@ enum RecognitionLanguage: String, CaseIterable {
         case .traditionalChinese: return "繁體中文"
         case .japanese: return "日本語"
         case .korean: return "한국어"
+        case .spanish: return "Español"
+        case .french: return "Français"
+        case .german: return "Deutsch"
+        case .russian: return "Русский"
         }
     }
 
@@ -24,7 +32,7 @@ enum RecognitionLanguage: String, CaseIterable {
 class StatusBarController: NSObject {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let fnKeyMonitor = FnKeyMonitor()
-    private let speechManager = SpeechRecognitionManager()
+    private let speechManager: SpeechRecognitionManager
     private let floatingWindow = FloatingWindowController()
     private let textInjector = TextInjector()
     private let settingsWindowController = SettingsWindowController()
@@ -44,12 +52,16 @@ class StatusBarController: NSObject {
     }
 
     override init() {
+        // Get saved language preference before initializing speechManager
+        let raw = UserDefaults.standard.string(forKey: "recognition_language") ?? "zh-CN"
+        let language = RecognitionLanguage(rawValue: raw) ?? .simplifiedChinese
+
+        speechManager = SpeechRecognitionManager(locale: language.locale)
         super.init()
         setupStatusItem()
         setupMenu()
         setupSpeechManager()
         setupFnKeyMonitor()
-        speechManager.setLocale(selectedLanguage.locale)
     }
 
     // MARK: - Status Item
@@ -155,6 +167,10 @@ class StatusBarController: NSObject {
         speechManager.onError = { [weak self] error in
             guard let self = self else { return }
             print("Speech error: \(error)")
+            self.floatingWindow.updateText("Error: \(error.localizedDescription)")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                self?.floatingWindow.hide()
+            }
             self.stopRecording()
         }
     }
