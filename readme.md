@@ -119,24 +119,6 @@ After install, grant Accessibility permission in
 
 App runs in `LSUIElement` mode (menu-bar only, no Dock icon).
 
-## Distribution
-
-This is ad-hoc signed, not notarized — no $99 Apple Developer
-account required. The installer handles what notarization would
-normally handle (quarantine removal, stable signature on the target
-machine) so end users still get a one-line install.
-
-To cut a release:
-
-```bash
-git tag v1.2.3 && git push --tags
-```
-
-`.github/workflows/release.yml` builds on `macos-14`, packages
-`VoiceInput.zip`, and attaches it to a GitHub Release. `install.sh`
-always pulls the latest release, so users re-running the curl
-command get the newest version.
-
 ## Origin
 
 This app was bootstrapped with a single Claude Code prompt — see
