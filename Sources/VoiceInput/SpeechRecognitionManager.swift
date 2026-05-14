@@ -37,9 +37,6 @@ class SpeechRecognitionManager {
     }
 
     private func startRecognition() {
-        recognitionTask?.cancel()
-        recognitionTask = nil
-
         guard let speechRecognizer = SFSpeechRecognizer(locale: currentLocale), speechRecognizer.isAvailable else {
             onError?(NSError(domain: "VoiceInput", code: 2, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer not available for \(currentLocale.identifier). Download the language in System Settings → Keyboard → Dictation."]))
             return
